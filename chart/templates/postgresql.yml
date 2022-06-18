@@ -21,7 +21,7 @@ spec:
             - containerPort: {{ .Values.postgresql.service.port }}
           envFrom:
             - configMapRef:
-              name: {{ .Values.postgresql.name }}-config
+                name: {{ .Values.postgresql.name }}-config
           volumeMounts:
             - name: {{ .Values.postgresql.pvc.name }}
               mountPath: {{ .Values.postgresql.pvc.mountPath }}

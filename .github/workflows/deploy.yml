@@ -49,9 +49,12 @@ jobs:
           token: ${{ github.token }}
           version: ${{ steps.get-latest-tag.outputs.tag }}
           values: |
-            django.image.tag: ${{ steps.get-latest-tag.outputs.tag }}
-            db.name: ${{ secrets.PG_NAME }}
-            db.user: ${{ secrets.PG_USER }}
-            db.password: ${{ secrets.PG_PASSWORD }}
+            django:
+              image:
+                tag: ${{ steps.get-latest-tag.outputs.tag }}
+            db:
+              name: ${{ secrets.PG_NAME }}
+              user: ${{ secrets.PG_USER }}
+              password: ${{ secrets.PG_PASSWORD }}
         env:
           KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'
