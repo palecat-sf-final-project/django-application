@@ -1,0 +1,45 @@
+django:
+  name: django-app
+  replicaCount: 1
+  image:
+    repository: cr.yandex/crppq99ahuq61ad1i6g6/django
+    pullPolicy: IfNotPresent
+    tag: VERSION
+  service:
+    type: NodePort
+    port: 3003
+    nodePort: 30003
+  imagePullSecrets:
+    name: regcred
+
+db:
+  host: db
+  pgdata: /var/lib/postgresql/data/k8s
+
+postgresql:
+  name: postgresql-db
+  replicaCount: 1
+  image:
+    repository: postgres
+    pullPolicy: IfNotPresent
+    tag: 13-alpine
+  service:
+    type: ClusterIP
+    port: 5432
+  pv:
+    name: postgresql-pv
+    capacity:
+      storage: 10Gi
+    volumeMode: Filesystem
+    persistentVolumeReclaimPolicy: Retain
+    accessMode: ReadWriteMany
+    nfs:
+      server: fileserver.ru-central1.internal
+      path: /data
+  pvc:
+    name: postgresql-pv-storage
+    resources:
+      requests:
+        storage: 3Gi
+    accessMode: ReadWriteMany
+    mountPath: /var/lib/postgresql/data

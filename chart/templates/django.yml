@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.django.name }}-deployment
+  labels:
+    app: {{ .Values.django.name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.django.name }}
+  replicas: {{ .Values.django.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.django.name }}
+    spec:
+      containers:
+        - name: {{ .Values.django.name }}
+          image: "{{ .Values.django.image.repository }}:{{ .Values.django.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.django.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.django.name }}-config
+          ports:
+            - containerPort: {{ .Values.django.service.port }}
+          command: ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:{{ .Values.django.service.port }}"]
+      imagePullSecrets:
+        - name: {{ .Values.django.imagePullSecrets.name }}

@@ -1,0 +1,57 @@
+name: Deploy
+
+on:
+  push:
+    tags:
+    - '*'
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-ecosystem/action-get-latest-tag@v1
+        id: get-latest-tag
+
+      - name: Log in to Yandex Cloud
+        uses: yc-actions/yc-cr-login@v0.1-alpha
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+
+      - name: Build, tag, and push image to Yandex Cloud Container Registry
+        env:
+          CR_REGISTRY: ${{ secrets.CR_REGISTRY }}
+          CR_REPO: django
+          IMAGE_TAG: ${{ steps.get-latest-tag.outputs.tag }}
+        run: |
+          docker build -t cr.yandex/$CR_REGISTRY/$CR_REPO:$IMAGE_TAG .
+          docker push cr.yandex/$CR_REGISTRY/$CR_REPO:$IMAGE_TAG
+
+      - name: Replace versions
+        uses: jacobtomlinson/gha-find-replace@v2
+        with:
+          find: "VERSION"
+          replace: ${{ steps.get-latest-tag.outputs.tag }}
+          include: "chart/**"
+          regex: false
+
+      - name: Deploy
+        uses: glopezep/helm@v1.7.1
+        with:
+          helm: helm3
+          release: dev
+          namespace: default
+          chart: chart
+          token: ${{ github.token }}
+          version: ${{ steps.get-latest-tag.outputs.tag }}
+          values: |
+            django.image.tag: ${{ steps.get-latest-tag.outputs.tag }}
+            db.name: ${{ secrets.PG_NAME }}
+            db.user: ${{ secrets.PG_USER }}
+            db.password: ${{ secrets.PG_PASSWORD }}
+        env:
+          KUBECONFIG_FILE: '${{ secrets.KUBECONFIG }}'

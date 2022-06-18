@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.postgresql.name }}-sts
+spec:
+  serviceName: {{ .Values.postgresql.name }}-service
+  selector:
+    matchLabels:
+      app: {{ .Values.postgresql.name }}
+  replicas: {{ .Values.postgresql.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.postgresql.name }}
+    spec:
+      containers:
+        - name: {{ .Values.postgresql.name }}
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.postgresql.service.port }}
+          envFrom:
+            - configMapRef:
+              name: {{ .Values.postgresql.name }}-config
+          volumeMounts:
+            - name: {{ .Values.postgresql.pvc.name }}
+              mountPath: {{ .Values.postgresql.pvc.mountPath }}
+
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Values.postgresql.pvc.name }}
+      spec:
+        accessModes:
+          - {{ .Values.postgresql.pvc.accessMode }}
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.pvc.resources.requests.storage }}
